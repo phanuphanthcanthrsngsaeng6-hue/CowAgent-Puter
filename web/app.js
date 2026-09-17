@@ -1,31 +1,42 @@
+const STORAGE_KEY = "cowagent-tasks-v1";
+const THEME_KEY = "cowagent-theme-v1";
 const $ = (id) => document.getElementById(id);
-const login = $("login"), logout = $("logout"), status = $("status");
-const prompt = $("prompt"), send = $("send"), messages = $("messages"), errorBox = $("error");
-const list = $("conversation-list"), counter = $("counter");
-const STORAGE_KEY = "cowagent-puter-conversation-v1";
-let busy = false;
-let conversation = loadConversation();
+let tasks = loadTasks();
+let currentFilter = "all";
 
-function loadConversation() {
-  try { const value = JSON.parse(localStorage.getItem(STORAGE_KEY)); return Array.isArray(value) && value.length ? value : [{ role: "assistant", content: "สวัสดีครับ 👋\nผมคือ CowAgent ผู้ช่วยของคุณ เริ่มต้นด้วยการเข้าสู่ระบบด้วย Puter แล้วถามอะไรก็ได้เลย" }]; } catch (_) { return [{ role: "assistant", content: "สวัสดีครับ 👋\nผมคือ CowAgent ผู้ช่วยของคุณ เริ่มต้นด้วยการเข้าสู่ระบบด้วย Puter แล้วถามอะไรก็ได้เลย" }]; }
+function loadTasks() {
+  try { const data = JSON.parse(localStorage.getItem(STORAGE_KEY)); return Array.isArray(data) ? data : []; }
+  catch (_) { return []; }
 }
-function saveConversation() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation)); } catch (_) {} }
-function showError(message = "") { errorBox.textContent = message; errorBox.classList.toggle("hidden", !message); }
-function setReady(user) { const name = user?.username || user?.email || "ผู้ใช้ Puter"; status.innerHTML = `<i class="online-dot"></i>${escapeHtml(name)}`; status.classList.add("online"); login.classList.add("hidden"); logout.classList.remove("hidden"); prompt.disabled = false; prompt.placeholder = "พิมพ์ข้อความของคุณ..."; send.disabled = false; }
-function escapeHtml(value) { const div = document.createElement("div"); div.textContent = String(value ?? ""); return div.innerHTML; }
-function render() { messages.innerHTML = ""; conversation.forEach((item) => addMessage(item.role, item.content, false)); updateList(); saveConversation(); }
-function addMessage(role, text, persist = true) { const row = document.createElement("article"); row.className = `message ${role}`; row.innerHTML = `<div class="avatar">${role === "user" ? "คุณ" : "C"}</div><div class="bubble"><span class="label">${role === "user" ? "คุณ" : "CowAgent"}</span><p></p></div>`; row.querySelector("p").textContent = text; messages.appendChild(row); messages.scrollTop = messages.scrollHeight; if (persist) { conversation.push({ role, content: text }); saveConversation(); updateList(); } }
-function updateList() { const first = conversation.find((item) => item.role === "user"); list.innerHTML = `<button class="conversation active"><span class="mini-icon">✦</span><span>${escapeHtml(first ? first.content.slice(0, 28) : "บทสนทนาใหม่")}</span></button>`; }
-function setBusy(value) { busy = value; send.disabled = value || !puter.auth.isSignedIn(); }
-function extractText(result) { if (typeof result === "string") return result; if (result?.message?.content) return result.message.content; if (typeof result?.message === "string") return result.message; if (typeof result?.content === "string") return result.content; return JSON.stringify(result, null, 2); }
-
-login.addEventListener("click", async () => { showError(""); login.disabled = true; login.textContent = "กำลังเปิดหน้าล็อกอิน..."; try { await puter.auth.signIn(); setReady(await puter.auth.getUser()); } catch (error) { showError(error?.msg || error?.message || "ล็อกอินไม่สำเร็จ กรุณาลองใหม่"); } finally { login.disabled = false; login.textContent = "เข้าสู่ระบบด้วย Puter"; } });
-logout.addEventListener("click", () => { puter.auth.signOut(); location.reload(); });
-$("new-chat").addEventListener("click", () => { conversation = [{ role: "assistant", content: "เริ่มบทสนทนาใหม่ได้เลยครับ ✨" }]; render(); prompt.focus(); });
-$("clear-chat").addEventListener("click", () => { if (conversation.length > 1 && confirm("ล้างบทสนทนานี้หรือไม่?")) { conversation = [{ role: "assistant", content: "ล้างบทสนทนาแล้วครับ เริ่มใหม่ได้เลย ✨" }]; render(); } });
-prompt.addEventListener("input", () => { counter.textContent = `${prompt.value.length} / 8000`; prompt.style.height = "auto"; prompt.style.height = `${Math.min(prompt.scrollHeight, 160)}px`; });
-
-(async () => { render(); try { if (puter.auth.isSignedIn()) setReady(await puter.auth.getUser()); } catch (_) {} })();
-
-$("composer").addEventListener("submit", async (event) => { event.preventDefault(); const text = prompt.value.trim(); if (!text || busy) return; if (!puter.auth.isSignedIn()) return showError("กรุณาเข้าสู่ระบบก่อนใช้งาน"); showError(""); prompt.value = ""; prompt.dispatchEvent(new Event("input")); addMessage("user", text); setBusy(true); const thinking = document.createElement("article"); thinking.className = "message assistant thinking-row"; thinking.innerHTML = `<div class="avatar">C</div><div class="bubble"><span class="label">CowAgent</span><p><span class="typing"><i></i><i></i><i></i></span></p></div>`; messages.appendChild(thinking); messages.scrollTop = messages.scrollHeight; try { const result = await puter.ai.chat(text); thinking.remove(); addMessage("assistant", extractText(result)); } catch (error) { thinking.remove(); showError(error?.message || "เรียก Puter AI ไม่สำเร็จ กรุณาลองใหม่"); } finally { setBusy(false); prompt.focus(); } });
-prompt.addEventListener("keydown", (event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); $("composer").requestSubmit(); } });
+function saveTasks() { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); const status = $("save-status"); status.textContent = "บันทึกแล้ว ✓"; setTimeout(() => { status.textContent = "บันทึกอัตโนมัติ"; }, 1200); }
+function makeId() { return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`; }
+function escapeText(value) { return String(value ?? ""); }
+function visibleTasks() {
+  const query = $("search-input").value.trim().toLowerCase();
+  return tasks.filter((task) => (currentFilter === "all" || (currentFilter === "active" && !task.completed) || (currentFilter === "completed" && task.completed)) && (!query || task.text.toLowerCase().includes(query)));
+}
+function render() {
+  const list = $("task-list"); list.replaceChildren();
+  const visible = visibleTasks();
+  visible.forEach((task) => {
+    const item = document.createElement("article"); item.className = `task ${task.completed ? "completed" : ""}`; item.dataset.id = task.id; item.setAttribute("role", "listitem");
+    const check = document.createElement("button"); check.className = "check"; check.type = "button"; check.setAttribute("aria-label", task.completed ? "ทำเครื่องหมายว่ายังไม่เสร็จ" : "ทำเครื่องหมายว่าเสร็จแล้ว"); check.textContent = task.completed ? "✓" : ""; check.addEventListener("click", () => toggleTask(task.id));
+    const text = document.createElement("span"); text.className = "task-text"; text.textContent = escapeText(task.text); text.title = "ดับเบิลคลิกเพื่อแก้ไข"; text.addEventListener("dblclick", () => editTask(task.id, text));
+    const priority = document.createElement("span"); priority.className = `priority ${task.priority}`; priority.textContent = task.priority === "high" ? "สำคัญ" : task.priority === "low" ? "ไม่เร่งด่วน" : "ปกติ";
+    const edit = document.createElement("button"); edit.className = "row-button"; edit.type = "button"; edit.title = "แก้ไข"; edit.textContent = "✎"; edit.addEventListener("click", () => editTask(task.id, text));
+    const remove = document.createElement("button"); remove.className = "row-button danger"; remove.type = "button"; remove.title = "ลบ"; remove.textContent = "×"; remove.addEventListener("click", () => removeTask(task.id));
+    item.append(check, text, priority, edit, remove); list.append(item);
+  });
+  const completed = tasks.filter((t) => t.completed).length; const active = tasks.length - completed; const percent = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
+  $("all-count").textContent = tasks.length; $("active-count").textContent = active; $("completed-count").textContent = completed; $("remaining-text").textContent = `${active} งานที่เหลือ`; $("progress-value").textContent = `${percent}%`; $("progress-ring").style.setProperty("--progress", `${percent * 3.6}deg`);
+  const empty = $("empty-state"); empty.classList.toggle("hidden", visible.length > 0); $("empty-title").textContent = tasks.length && !visible.length ? "ไม่พบงานที่ค้นหา" : "ยังไม่มีงาน"; $("empty-copy").textContent = tasks.length && !visible.length ? "ลองเปลี่ยนคำค้นหาหรือตัวกรอง" : "เพิ่มงานแรกของคุณ แล้วเริ่มลงมือกันเลย";
+}
+function addTask(event) { event.preventDefault(); const input = $("task-input"); const text = input.value.trim(); if (!text) { input.focus(); return; } tasks.unshift({ id: makeId(), text, priority: $("priority-input").value, completed: false, createdAt: Date.now() }); input.value = ""; $("priority-input").value = "normal"; saveTasks(); render(); input.focus(); }
+function toggleTask(id) { const task = tasks.find((item) => item.id === id); if (task) { task.completed = !task.completed; task.completedAt = task.completed ? Date.now() : null; saveTasks(); render(); } }
+function removeTask(id) { tasks = tasks.filter((task) => task.id !== id); saveTasks(); render(); }
+function editTask(id, target) { const task = tasks.find((item) => item.id === id); if (!task || task.completed) return; const input = document.createElement("input"); input.className = "edit-input"; input.value = task.text; target.replaceWith(input); input.focus(); input.select(); const finish = () => { const value = input.value.trim(); if (value) task.text = value; saveTasks(); render(); }; input.addEventListener("blur", finish, { once: true }); input.addEventListener("keydown", (event) => { if (event.key === "Enter") input.blur(); if (event.key === "Escape") { input.value = task.text; input.blur(); } }); }
+$("add-form").addEventListener("submit", addTask); $("search-input").addEventListener("input", render); $("clear-completed").addEventListener("click", () => { if (tasks.some((task) => task.completed) && confirm("ลบงานที่เสร็จแล้วทั้งหมดหรือไม่?")) { tasks = tasks.filter((task) => !task.completed); saveTasks(); render(); } });
+document.querySelectorAll(".filter").forEach((button) => button.addEventListener("click", () => { currentFilter = button.dataset.filter; document.querySelectorAll(".filter").forEach((item) => item.classList.toggle("active", item === button)); render(); }));
+$("theme-toggle").addEventListener("click", () => { document.body.classList.toggle("light"); localStorage.setItem(THEME_KEY, document.body.classList.contains("light") ? "light" : "dark"); });
+if (localStorage.getItem(THEME_KEY) === "light") document.body.classList.add("light");
+render();
