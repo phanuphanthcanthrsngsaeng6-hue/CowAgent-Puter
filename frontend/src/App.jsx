@@ -9,18 +9,45 @@ const DEFAULT_MODELS = [
   'ollama/llama3',
 ];
 
-const initialMessages = [
-  { role: 'assistant', content: 'Hello! I am CowAgent. Login with Puter, choose a model, and I can help inspect the repo, search files, or run sandbox commands.' },
-];
+const emptyChat = () => ({
+  id: null,
+  messages: [],
+});
 
 export default function App() {
-  const [messages, setMessages] = useState(initialMessages);
+  const [conversations, setConversations] = useState([]);
+  const [conversationId, setConversationId] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODELS[0]);
   const [models, setModels] = useState(DEFAULT_MODELS);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [repoState, setRepoState] = useState({ status: [], files: [] });
+
+  const loadConversations = async () => {
+    try {
+      const res = await fetch('/api/conversations');
+      const json = await res.json();
+      setConversations(json.conversations || []);
+      if (json.conversations?.length) {
+        setConversationId(json.conversations[0].id);
+        loadMessages(json.conversations[0].id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const loadMessages = async (cid) => {
+    if (!cid) return;
+    try {
+      const res = await fetch(`/api/conversations/${cid}/messages`);
+      const json = await res.json();
+      setMessages(json.messages || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/models')
@@ -28,11 +55,21 @@ export default function App() {
       .then((data) => setModels(data.models || DEFAULT_MODELS))
       .catch(() => setModels(DEFAULT_MODELS));
 
-    fetch('/api/git/status')
-      .then((res) => res.json())
-      .then((data) => setRepoState((prev) => ({ ...prev, status: data.status || [] })))
-      .catch(() => {});
+    loadConversations();
   }, []);
+
+  const createConversation = async () => {
+    const res = await fetch('/api/conversations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'New chat', model: selectedModel }),
+    });
+    const json = await res.json();
+    const cid = json.conversation_id;
+    setConversationId(cid);
+    setMessages([]);
+    loadConversations();
+  };
 
   const loginPuter = async () => {
     try {
@@ -71,27 +108,33 @@ export default function App() {
     const trimmed = input.trim();
     if (!trimmed) return;
 
-    const userMessage = { role: 'user', content: trimmed };
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
+    const nextUserMessage = { role: 'user', content: trimmed };
+    setMessages((prev) => [...prev, nextUserMessage]);
     setInput('');
     setLoading(true);
 
     try {
+      let res;
       const puterReply = await tryPuterResponse(trimmed);
-      let reply = puterReply;
-
-      if (!puterReply) {
+      if (puterReply) {
+        res = { reply: puterReply, conversation_id: conversationId };
+      } else {
         const backendRes = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: selectedModel, messages: nextMessages, prompt: trimmed }),
+          body: JSON.stringify({ model: selectedModel, conversation_id: conversationId, prompt: trimmed }),
         });
-        const json = await backendRes.json();
-        reply = json.reply || 'Backend fallback reply';
+        res = await backendRes.json();
       }
 
-      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
+      const assistantMessage = { role: 'assistant', content: res.reply };
+      setMessages((prev) => [...prev, assistantMessage]);
+      if (res.conversation_id) {
+        setConversationId(res.conversation_id);
+        if (!conversations.length || !conversations.some((c) => c.id === res.conversation_id)) {
+          loadConversations();
+        }
+      }
     } catch (error) {
       setMessages((prev) => [...prev, { role: 'assistant', content: 'Error while generating response: ' + (error?.message || 'Unknown error') }]);
     } finally {
@@ -100,7 +143,7 @@ export default function App() {
   };
 
   const handleSearchRepo = async () => {
-    const q = prompt('Search repo for text');
+    const q = window.prompt('Search repo for text');
     if (!q) return;
     const res = await fetch('/api/workspace/search', {
       method: 'POST',
@@ -130,6 +173,26 @@ export default function App() {
     setMessages((prev) => [...prev, { role: 'assistant', content: `Sandbox:\n\n${text}` }]);
   };
 
+  const handleApprovalDemo = async () => {
+    const payload = {
+      path: 'demo/approval.txt',
+      content: 'This file was created through the approval workflow.\n',
+    };
+    const res = await fetch('/api/approvals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'write_file', payload, conversation_id: conversationId }),
+    });
+    const json = await res.json();
+    const decision = window.confirm(`Approval request created: ${json.id}. Approve this write?`);
+    await fetch(`/api/approvals/${json.id}/decision`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ decision: decision ? 'approve' : 'reject', note: decision ? 'Approved by user' : 'Rejected by user' }),
+    });
+    setMessages((prev) => [...prev, { role: 'assistant', content: `Approval workflow: ${decision ? 'approved and file written' : 'rejected'}` }]);
+  };
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -153,6 +216,7 @@ export default function App() {
           <button className="primary-btn" onClick={loginPuter}>
             {user ? `Connected: ${user.username || user.email || 'Puter User'}` : 'Login with Puter'}
           </button>
+          <button className="secondary-btn" onClick={createConversation}>New chat</button>
         </div>
       </aside>
 
@@ -183,7 +247,7 @@ export default function App() {
 
             <div className="messages">
               {messages.map((msg, index) => (
-                <div key={index} className={`message ${msg.role}`}>
+                <div key={`${msg.role}-${index}`} className={`message ${msg.role}`}>
                   <div className="avatar">{msg.role === 'user' ? 'U' : 'AI'}</div>
                   <div className="bubble">{msg.content}</div>
                 </div>
@@ -243,6 +307,7 @@ export default function App() {
           <button className="utility-btn" onClick={handleSearchRepo}>Search repo</button>
           <button className="utility-btn" onClick={handleGitStatus}>Git status</button>
           <button className="utility-btn" onClick={handleSandbox}>Run sandbox</button>
+          <button className="utility-btn" onClick={handleApprovalDemo}>Approval demo</button>
         </div>
       </main>
     </div>
