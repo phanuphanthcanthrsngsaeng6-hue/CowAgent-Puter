@@ -10,7 +10,6 @@ const composer = $("composer");
 const messages = $("messages");
 const errorBox = $("error");
 const counter = $("counter");
-
 const htmlEditor = $("html-editor");
 const cssEditor = $("css-editor");
 const jsEditor = $("js-editor");
@@ -20,19 +19,22 @@ const saveCodeBtn = $("save-code");
 
 let conversation = loadConversation();
 
+function defaultConversation() {
+  return [{
+    role: "assistant",
+    content: "สวัสดีครับ 👋\nผมเรียกใช้ Browser Sandbox ให้คุณได้จากในแชท\n\nลองพิมพ์:\n• รัน sandbox\n• preview\n• /run\n• /html <h1>Hello</h1>"
+  }];
+}
+
 function loadConversation() {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(saved) && saved.length ? saved : [{ role: "assistant", content: "สวัสดีครับ 👋\nผมพร้อมช่วยคุณตั้งค่า workspace, แซนบ็อก preview และงานต่าง ๆ" }];
-  } catch (_) {
-    return [{ role: "assistant", content: "สวัสดีครับ 👋\nผมพร้อมช่วยคุณตั้งค่า workspace, แซนบ็อก preview และงานต่าง ๆ" }];
-  }
+    return Array.isArray(saved) && saved.length ? saved : defaultConversation();
+  } catch (_) { return defaultConversation(); }
 }
 
 function saveConversation() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation));
-  } catch (_) {}
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation)); } catch (_) {}
 }
 
 function renderMessages() {
@@ -43,16 +45,19 @@ function renderMessages() {
     const avatar = document.createElement("div");
     avatar.className = "avatar";
     avatar.textContent = item.role === "user" ? "You" : "AI";
-
     const bubble = document.createElement("div");
     bubble.className = "bubble";
     bubble.textContent = item.content;
-
-    article.appendChild(avatar);
-    article.appendChild(bubble);
+    article.append(avatar, bubble);
     messages.appendChild(article);
   });
   messages.scrollTop = messages.scrollHeight;
+}
+
+function addMessage(role, content) {
+  conversation.push({ role, content });
+  saveConversation();
+  renderMessages();
 }
 
 function showError(message = "") {
@@ -77,40 +82,67 @@ function setSignedOut() {
 
 async function handleLogin() {
   try {
-    if (!window.puter || !puter.auth) {
-      showError("Puter SDK ยังไม่พร้อมใช้งานในหน้านี้");
-      return;
-    }
-
+    if (!window.puter || !puter.auth) return showError("Puter SDK ยังไม่พร้อมใช้งานในหน้านี้");
     await puter.auth.signIn();
-    const user = await puter.auth.getUser();
-    setSignedIn(user);
+    setSignedIn(await puter.auth.getUser());
     showError("");
-  } catch (error) {
-    showError("ไม่สามารถเข้าสู่ระบบ Puter ได้");
-  }
+  } catch (_) { showError("ไม่สามารถเข้าสู่ระบบ Puter ได้"); }
 }
 
 function handleLogout() {
+  try { if (window.puter && puter.auth) puter.auth.signOut(); } catch (_) {}
+  setSignedOut();
+}
+
+function loadSandbox() {
   try {
-    if (window.puter && puter.auth) {
-      puter.auth.signOut();
+    const saved = JSON.parse(localStorage.getItem(SANDBOX_KEY));
+    if (saved) {
+      htmlEditor.value = saved.html || htmlEditor.value;
+      cssEditor.value = saved.css || cssEditor.value;
+      jsEditor.value = saved.js || jsEditor.value;
     }
   } catch (_) {}
-  setSignedOut();
+}
+
+function saveSandbox() {
+  try {
+    localStorage.setItem(SANDBOX_KEY, JSON.stringify({ html: htmlEditor.value, css: cssEditor.value, js: jsEditor.value }));
+  } catch (_) {}
+}
+
+function runSandbox() {
+  const doc = `<!doctype html><html><head><meta charset="UTF-8"><style>${cssEditor.value}</style></head><body>${htmlEditor.value}<script>try{${jsEditor.value}}catch(error){const el=document.createElement('pre');el.style.color='#ffb4b4';el.textContent=error.stack||error.message;document.body.appendChild(el)}<\\/script></body></html>`;
+  previewFrame.srcdoc = doc;
+  saveSandbox();
+}
+
+function runFromChat(text) {
+  const normalized = text.trim();
+  const lower = normalized.toLowerCase();
+  const runRequest = lower === "/run" || lower === "/preview" || /รัน.*(sandbox|แซนบ็อก)|แสดงผล.*(sandbox|preview)|preview.*(โค้ด|code)?/.test(lower);
+  const htmlCommand = normalized.match(/^\/(?:html)\s+([\s\S]+)/i);
+  const cssCommand = normalized.match(/^\/(?:css)\s+([\s\S]+)/i);
+  const jsCommand = normalized.match(/^\/(?:js|javascript)\s+([\s\S]+)/i);
+
+  if (htmlCommand) { htmlEditor.value = htmlCommand[1]; runSandbox(); return "อัปเดต HTML และรันใน Sandbox ให้แล้วครับ ✅"; }
+  if (cssCommand) { cssEditor.value = cssCommand[1]; runSandbox(); return "อัปเดต CSS และรัน Preview ให้แล้วครับ ✅"; }
+  if (jsCommand) { jsEditor.value = jsCommand[1]; runSandbox(); return "อัปเดต JavaScript และรันใน Sandbox ให้แล้วครับ ✅"; }
+  if (runRequest) { runSandbox(); return "เรียกใช้ Sandbox และอัปเดต Live Preview ให้แล้วครับ ✅\n\nหมายเหตุ: ตอนนี้เป็น Browser Sandbox จึงรัน HTML/CSS/JavaScript ได้ แต่ยังไม่รัน Python หรือคำสั่งระบบจริง"; }
+  if (lower.includes("python") || lower.includes("pip install") || lower.includes("npm install")) {
+    return "ตอนนี้ผมเรียกใช้ได้เฉพาะ Browser Sandbox ในหน้าเว็บครับ\n\nPython, pip แล��� npm ต้องมี backend/container แยกต่างหาก ไม่ควรรันคำสั่งเหล่านี้ใน browser โดยตรง\n\nถ้าต้องการดูหน้าเว็บ ให้พิมพ์ /run หรือ /html <h1>Hello</h1>";
+  }
+  return `รับคำสั่งแล้วครับ: "${normalized}"\n\nถ้าต้องการให้ผมเรียก Sandbox ให้พิมพ์ /run หรือ “รัน sandbox” ได้เลย`;
 }
 
 composer.addEventListener("submit", (event) => {
   event.preventDefault();
   const text = prompt.value.trim();
   if (!text) return;
-
-  conversation.push({ role: "user", content: text });
-  conversation.push({ role: "assistant", content: `ผมได้ยินแล้ว: "${text}"\n\nใน workspace นี้ ผมสามารถช่วยได้ 3 อย่าง:\n- ออกแบบ feature ใหม่\n- สร้าง mock UI สำหรับหน้าแชท/แดชบอร์ด\n- วางแซนบ็อก preview ให้คุณทดลองโค้ดได้ทันที` });
+  addMessage("user", text);
   prompt.value = "";
   counter.textContent = "0 / 6000";
-  saveConversation();
-  renderMessages();
+  addMessage("assistant", runFromChat(text));
 });
 
 prompt.addEventListener("input", () => {
@@ -128,57 +160,6 @@ prompt.addEventListener("keydown", (event) => {
 
 loginBtn.addEventListener("click", handleLogin);
 logoutBtn.addEventListener("click", handleLogout);
-
-function loadSandbox() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SANDBOX_KEY));
-    if (saved) {
-      htmlEditor.value = saved.html || htmlEditor.value;
-      cssEditor.value = saved.css || cssEditor.value;
-      jsEditor.value = saved.js || jsEditor.value;
-    }
-  } catch (_) {}
-}
-
-function saveSandbox() {
-  localStorage.setItem(SANDBOX_KEY, JSON.stringify({
-    html: htmlEditor.value,
-    css: cssEditor.value,
-    js: jsEditor.value
-  }));
-}
-
-function runSandbox() {
-  const html = htmlEditor.value;
-  const css = cssEditor.value;
-  const js = jsEditor.value;
-
-  const doc = `<!doctype html>
-  <html>
-    <head>
-      <meta charset="UTF-8" />
-      <style>${css}</style>
-    </head>
-    <body>
-      ${html}
-      <script>
-        try {
-          ${js}
-        } catch (error) {
-          const div = document.createElement('pre');
-          div.style.color = '#ffb4b4';
-          div.style.marginTop = '12px';
-          div.textContent = error.stack || error.message;
-          document.body.appendChild(div);
-        }
-      <\/script>
-    </body>
-  </html>`;
-
-  previewFrame.srcdoc = doc;
-  saveSandbox();
-}
-
 runCodeBtn.addEventListener("click", runSandbox);
 saveCodeBtn.addEventListener("click", saveSandbox);
 
@@ -186,14 +167,8 @@ saveCodeBtn.addEventListener("click", saveSandbox);
   renderMessages();
   loadSandbox();
   runSandbox();
-
   try {
-    if (window.puter && puter.auth && puter.auth.isSignedIn()) {
-      puter.auth.getUser().then(setSignedIn).catch(() => setSignedOut());
-    } else {
-      setSignedOut();
-    }
-  } catch (_) {
-    setSignedOut();
-  }
+    if (window.puter && puter.auth && puter.auth.isSignedIn()) puter.auth.getUser().then(setSignedIn).catch(setSignedOut);
+    else setSignedOut();
+  } catch (_) { setSignedOut(); }
 })();
