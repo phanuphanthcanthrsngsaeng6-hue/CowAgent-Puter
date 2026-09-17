@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CowAgent Puter</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span class="logo">C</span><div><strong>CowAgent Puter</strong><small>ผู้ช่วย AI ที่คุณควบคุมเอง</small></div></div>
+      <div class="account"><span id="status" class="status">ยังไม่ได้เข้าสู่ระบบ</span><button id="login" class="primary">เข้าสู่ระบบด้วย Puter</button><button id="logout" class="ghost hidden">ออกจากระบบ</button></div>
+    </header>
+    <section class="hero"><p class="eyebrow">YOUR AGENT WORKSPACE</p><h1>สร้างผู้ช่วยของคุณเอง</h1><p>เริ่มต้นด้วย Puter AI แล้วค่อยต่อยอด Agent, memory และ tools ของเราเอง</p></section>
+    <section id="chat" class="chat-card">
+      <div id="messages" class="messages"><div class="message assistant"><div class="avatar">C</div><div><span class="label">CowAgent</span><p>สวัสดีครับ เข้าสู่ระบบด้วย Puter แล้วเริ่มสนทนาได้เลย</p></div></div></div>
+      <div id="error" class="error hidden"></div>
+      <form id="composer" class="composer"><textarea id="prompt" rows="1" placeholder="พิมพ์ข้อความของคุณ..." disabled></textarea><button id="send" class="send" type="submit" disabled>ส่ง <span>↵</span></button></form>
+      <p class="notice">Puter AI ทำงานในเบราว์เซอร์ของคุณ • ไม่เก็บรหัสผ่านหรือ auth token</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
