@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <title>CowAgent Chat</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="backdrop" id="backdrop"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-head"><div class="brand-mark">C</div><strong>CowAgent</strong><button id="close-sidebar" class="icon-btn" type="button">×</button></div>
+      <button id="new-chat" class="new-chat" type="button">＋ <span>แชทใหม่</span></button>
+      <nav class="side-nav"><button class="side-link active" type="button">▣ <span>ห้องแชท</span></button><button class="side-link" id="open-sandbox-nav" type="button">⌘ <span>Browser Sandbox</span></button><button class="side-link" type="button">☷ <span>ประวัติการแชท</span></button><button class="side-link" type="button">⚙ <span>ตั้งค่า</span></button></nav>
+      <div class="sidebar-foot"><span class="online-dot"></span><span>พร้อมใช้งาน</span></div>
+    </aside>
+
+    <header class="chat-toolbar">
+      <button id="open-sidebar" class="toolbar-btn" type="button" aria-label="เปิดเมนู">☰</button>
+      <button id="new-chat-top" class="toolbar-btn pencil" type="button" aria-label="แชทใหม่">✎</button>
+      <div class="conversation-title">Understanding MyComponent... <span>⌄</span></div>
+      <button id="open-sandbox" class="toolbar-btn panel-icon" type="button" aria-label="เปิดแซนบ็อก">◧</button>
+    </header>
+
+    <main class="chat-page">
+      <section class="conversation" aria-label="ห้องแชท">
+        <div id="messages" class="messages"></div>
+        <div id="typing" class="typing hidden"><span></span><span></span><span></span> กำลังคิด...</div>
+        <div id="error" class="error hidden"></div>
+        <form id="composer" class="composer">
+          <textarea id="prompt" rows="1" maxlength="6000" placeholder="Ask anything or type @ to add context"></textarea>
+          <div class="composer-controls"><button class="control-btn" type="button">♙ <span>AI</span>⌄</button><span class="optimization">Optimized for: <b>Balance</b>⌄</span><button class="control-icon" type="button">◉</button><button id="send" class="send-btn" type="submit" aria-label="ส่งข้อความ">➤</button></div>
+          <div class="composer-bottom"><button class="square-btn" type="button">▢</button><button class="square-btn" type="button">▤</button><button class="square-btn" type="button">＋</button><span id="counter">0 / 6000</span></div>
+        </form>
+      </section>
+
+      <aside class="sandbox-panel" id="sandbox-panel" aria-label="Browser Sandbox">
+        <div class="sandbox-header"><div><strong>Browser Sandbox</strong><small>ทดลองโค้ดได้ทันที</small></div><button id="close-sandbox" class="icon-btn" type="button">×</button></div>
+        <div class="sandbox-actions"><button id="run-code" class="small-btn" type="button">▶ Run</button><button id="save-code" class="small-btn ghost" type="button">Save</button></div>
+        <div class="editor-wrap"><div class="editor-column"><label>HTML</label><textarea id="html-editor" spellcheck="false"><h1>Hello CowAgent!</h1><button onclick="alert('Hello from sandbox!')">Click me</button></textarea></div><div class="editor-column"><label>CSS</label><textarea id="css-editor" spellcheck="false">body { font-family: sans-serif; padding: 20px; background: #0f172a; color: white; } button { padding: 10px 16px; border: 0; border-radius: 10px; background: #55e6ab; cursor: pointer; }</textarea></div><div class="editor-column"><label>JavaScript</label><textarea id="js-editor" spellcheck="false">console.log('Sandbox ready');</textarea></div></div>
+        <div class="preview-header"><span>Live Preview</span><span class="live-dot">● Live</span></div><iframe id="preview-frame" title="sandbox preview"></iframe>
+      </aside>
+    </main>
+    <button id="sandbox-fab" class="sandbox-fab" type="button">⌘ <span>Sandbox</span></button>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
