@@ -2,110 +2,67 @@
 <html lang="th">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CowAgent Workspace</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1117">
+  <title>CowAgent Chat</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
-  <div class="workspace-layout">
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="brand-mark">C</div>
-        <div>
-          <strong>CowAgent</strong>
-          <small>Workspace</small>
-        </div>
-      </div>
+  <div class="app-shell">
+    <header class="mobile-status" aria-hidden="true"><span>02:28</span><span>◉ ◌ ◉</span><span>4G　▮▮ 11%</span></header>
+    <header class="chat-toolbar">
+      <button class="toolbar-btn" type="button" aria-label="เปิดเมนู">☰</button>
+      <button class="toolbar-btn compose-icon" type="button" aria-label="แชทใหม่">✎</button>
+      <div class="conversation-title">Understanding MyComponent... <span>⌄</span></div>
+      <button class="toolbar-btn" type="button" aria-label="แสดงแผง">◧</button>
+    </header>
 
-      <nav class="nav">
-        <button class="nav-item active" type="button">💬 ห้องแชท</button>
-        <button class="nav-item" type="button">🧪 แซนบ็อก</button>
-        <button class="nav-item" type="button">📋 To-Do</button>
-        <button class="nav-item" type="button">⚙️ ตั้งค่า</button>
-      </nav>
-
-      <div class="user-card">
-        <span id="status" class="status-badge">ยังไม่ได้ล็อกอิน</span>
-        <button id="login" class="primary-btn" type="button">เข้าสู่ระบบ Puter</button>
-        <button id="logout" class="ghost-btn hidden" type="button">ออกจากระบบ</button>
-      </div>
-    </aside>
-
-    <main class="main-panel">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">AI WORKSPACE</p>
-          <h1>โต้ตอบ + ทดลองโค้ด + สร้างผลงาน</h1>
-        </div>
-        <div class="topbar-actions">
-          <button class="ghost-btn" type="button">เปิดแซนบ็อก</button>
-        </div>
-      </header>
-
-      <section class="chat-split">
-        <div class="chat-panel">
-          <div class="chat-header">
-            <span class="chat-title">ผู้ช่วยของฉัน</span>
-            <span class="chat-subtitle">สร้างแนวคิด · รัน mock preview · จัดการงาน</span>
-          </div>
-
-          <div id="messages" class="messages">
-            <article class="message assistant">
-              <div class="avatar">AI</div>
-              <div class="bubble">สวัสดีครับ 👋
-ผมพร้อมช่วยคุณสร้าง UI, แซนบ็อก preview และจัดการงานใน workspace นี้</div>
-            </article>
-          </div>
-
-          <div id="error" class="error hidden"></div>
-
-          <form id="composer" class="composer">
-            <textarea id="prompt" rows="1" maxlength="6000" placeholder="พิมพ์สิ่งที่ต้องการให้ผมช่วย..."></textarea>
-            <button id="send" class="primary-btn" type="submit">ส่ง</button>
-          </form>
-          <div class="composer-meta">
-            <span>Enter เพื่อส่ง · Shift + Enter ขึ้นบรรทัดใหม่</span>
-            <span id="counter">0 / 6000</span>
-          </div>
-        </div>
-
-        <div class="sandbox-panel">
-          <div class="sandbox-header">
-            <span>Browser Sandbox</span>
-            <div class="sandbox-actions">
-              <button id="run-code" class="small-btn" type="button">Run</button>
-              <button id="save-code" class="small-btn ghost" type="button">Save</button>
+    <main class="chat-page">
+      <section class="conversation" aria-label="ห้องแชท">
+        <div id="messages" class="messages">
+          <article class="message assistant">
+            <div class="bubble">สวัสดีครับ 👋<br>ผมพร้อมช่วยตรวจโค้ด แก้ปัญหา และเรียกใช้ Sandbox ให้คุณ</div>
+          </article>
+          <article class="message assistant">
+            <div class="code-card">
+              <div class="code-card-header"><span class="code-language"><i></i>Text</span><span class="code-tools">☷　▣</span></div>
+              <pre>/api/github-sync</pre>
             </div>
-          </div>
-
-          <div class="editor-wrap">
-            <div class="editor-column">
-              <label>HTML</label>
-              <textarea id="html-editor" spellcheck="false"><h1>Hello CowAgent!</h1>
-<button onclick="alert('Hello from sandbox!')">Click me</button></textarea>
-            </div>
-            <div class="editor-column">
-              <label>CSS</label>
-              <textarea id="css-editor" spellcheck="false">body { font-family: sans-serif; padding: 20px; background: #0f172a; color: white; }
-button { padding: 10px 16px; border: none; border-radius: 10px; background: #55e6ab; color: #021a12; font-weight: 700; cursor: pointer; }</textarea>
-            </div>
-            <div class="editor-column">
-              <label>JavaScript</label>
-              <textarea id="js-editor" spellcheck="false">console.log('Sandbox ready');
-document.body.insertAdjacentHTML('beforeend', '<p>Preview running successfully.</p>');</textarea>
-            </div>
-          </div>
-
-          <div class="preview-header">
-            <span>Live Preview</span>
-          </div>
-          <iframe id="preview-frame" title="sandbox preview"></iframe>
+          </article>
+          <article class="message assistant">
+            <div class="bubble">ถ้ายังไม่เปลี่ยน Root Directory และ deploy จาก root อยู่ ไฟล์ <code>index.html</code> จะ redirect ไปที่:</div>
+          </article>
+          <article class="message assistant">
+            <div class="code-card"><div class="code-card-header"><span class="code-language"><i></i>Text</span><span class="code-tools">☷　▣</span></div><pre>/web/</pre></div>
+          </article>
         </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <form id="composer" class="composer">
+          <textarea id="prompt" rows="1" maxlength="6000" placeholder="Ask anything or type @ to add context"></textarea>
+          <div class="composer-controls">
+            <button class="control-btn" type="button" aria-label="เลือกผู้ช่วย">♙ <span>AI</span>⌄</button>
+            <span class="optimization">Optimized for: <b>Balance</b>⌄</span>
+            <button class="control-icon" type="button" aria-label="โหมดการทำงาน">◉</button>
+            <button id="send" class="send-btn" type="submit" aria-label="ส่งข้อความ">➤</button>
+          </div>
+          <div class="composer-bottom"><button class="square-btn" type="button">▢</button><button class="square-btn" type="button">▤</button><button class="square-btn" type="button">＋</button><span id="counter">0 / 6000</span></div>
+        </form>
       </section>
+
+      <aside class="sandbox-panel">
+        <div class="sandbox-header"><span>Browser Sandbox</span><div class="sandbox-actions"><button id="run-code" class="small-btn" type="button">Run</button><button id="save-code" class="small-btn ghost" type="button">Save</button></div></div>
+        <div class="editor-wrap">
+          <div class="editor-column"><label>HTML</label><textarea id="html-editor" spellcheck="false"><h1>Hello CowAgent!</h1><button onclick="alert('Hello from sandbox!')">Click me</button></textarea></div>
+          <div class="editor-column"><label>CSS</label><textarea id="css-editor" spellcheck="false">body { font-family: sans-serif; padding: 20px; background: #0f172a; color: white; }</textarea></div>
+          <div class="editor-column"><label>JavaScript</label><textarea id="js-editor" spellcheck="false">console.log('Sandbox ready');</textarea></div>
+        </div>
+        <div class="preview-header"><span>Live Preview</span></div><iframe id="preview-frame" title="sandbox preview"></iframe>
+      </aside>
     </main>
   </div>
-
   <script src="app.js"></script>
 </body>
 </html>
