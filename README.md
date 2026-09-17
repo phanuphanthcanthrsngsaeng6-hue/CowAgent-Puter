@@ -1,40 +1,56 @@
-# CowAgent-Puter
+# CowAgent Full-Stack Scaffold
 
-A controlled web workspace for integrating Puter.com authentication and Puter AI with a future CowAgent runtime.
+This repository now includes a minimal working scaffold for a full-stack AI workspace using:
 
-## Run immediately
+- Frontend: React + Vite
+- Backend: Python + FastAPI
+- LLM access: Puter AI via browser SDK
+- Repo tools: workspace search and git status
+- Sandbox: Docker placeholder endpoint
+- Storage: SQLite-ready backend structure
 
-Requirements: Python 3.9+ and a browser.
+## Run it locally
+
+### 1) Backend
 
 ```bash
-python -m http.server 8080 --directory web
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python main.py
 ```
 
-Open http://localhost:8080 and click **เข้าสู่ระบบด้วย Puter**.
+Backend runs on:
 
-> Do not open `web/index.html` directly with `file://`; browser popup/auth and SDK features require HTTP(S).
+- http://localhost:8000
 
-## Current scope
+### 2) Frontend
 
-- Puter.com sign-in/sign-out in the browser
-- Puter AI chat with a polished responsive UI
-- Local browser chat history (no passwords or Puter tokens are stored by this app)
-- Clear seam for adding our own gateway, memory, tools, and agent runtime
-
-## Architecture
-
-```text
-web/                 Browser UI and Puter client integration
-core/                Application contracts and local session model
-models/              Model-provider contracts
-memory/              Memory-store contract
- tools/              Tool permission policy
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
-Puter authentication is intentionally kept in the browser. This repository must not receive or persist Puter passwords, cookies, or auth tokens.
+Frontend runs on:
 
-## Next integration steps
+- http://localhost:3000
 
-1. Add the CowAgent source as an upstream-controlled import or adapter.
-2. Route authenticated web messages through our gateway when tools/memory are enabled.
-3. Keep direct Puter chat as the safe fallback until the server-side integration is explicitly designed.
+## Key endpoints
+
+- GET /api/health
+- GET /api/models
+- POST /api/chat
+- GET /api/workspace/files
+- POST /api/workspace/search
+- GET /api/git/status
+- POST /api/git/commit
+- POST /api/sandbox/run
+
+## Notes
+
+- Puter login is handled directly in the browser from the frontend.
+- The backend acts as the repo and sandbox control layer.
+- Docker sandbox is a ready placeholder; it will return a graceful message if Docker is unavailable.
+- This scaffold is intentionally minimal so it is safe to extend into a real multi-agent coding workspace.
