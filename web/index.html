@@ -3,23 +3,37 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111f">
+  <meta name="description" content="CowAgent Puter — ผู้ช่วย AI ที่คุณควบคุมเอง">
   <title>CowAgent Puter</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
-  <main class="shell">
+  <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+  <main class="app-shell">
     <header class="topbar">
-      <div class="brand"><span class="logo">C</span><div><strong>CowAgent Puter</strong><small>ผู้ช่วย AI ที่คุณควบคุมเอง</small></div></div>
-      <div class="account"><span id="status" class="status">ยังไม่ได้เข้าสู่ระบบ</span><button id="login" class="primary">เข้าสู่ระบบด้วย Puter</button><button id="logout" class="ghost hidden">ออกจากระบบ</button></div>
+      <a class="brand" href="./" aria-label="CowAgent Puter หน้าหลัก"><span class="logo">C</span><span><strong>CowAgent</strong><small>PUTER WORKSPACE</small></span></a>
+      <div class="account"><span id="status" class="status"><i></i>ยังไม่ได้เข้าสู่ระบบ</span><button id="login" class="button primary">เข้าสู่ระบบด้วย Puter</button><button id="logout" class="button ghost hidden">ออกจากระบบ</button></div>
     </header>
-    <section class="hero"><p class="eyebrow">YOUR AGENT WORKSPACE</p><h1>สร้างผู้ช่วยของคุณเอง</h1><p>เริ่มต้นด้วย Puter AI แล้วค่อยต่อยอด Agent, memory และ tools ของเราเอง</p></section>
-    <section id="chat" class="chat-card">
-      <div id="messages" class="messages"><div class="message assistant"><div class="avatar">C</div><div><span class="label">CowAgent</span><p>สวัสดีครับ เข้าสู่ระบบด้วย Puter แล้วเริ่มสนทนาได้เลย</p></div></div></div>
-      <div id="error" class="error hidden"></div>
-      <form id="composer" class="composer"><textarea id="prompt" rows="1" placeholder="พิมพ์ข้อความของคุณ..." disabled></textarea><button id="send" class="send" type="submit" disabled>ส่ง <span>↵</span></button></form>
-      <p class="notice">Puter AI ทำงานในเบราว์เซอร์ของคุณ • ไม่เก็บรหัสผ่านหรือ auth token</p>
+
+    <section class="hero"><div><p class="eyebrow">YOUR PRIVATE AI WORKSPACE</p><h1>คิดให้ไกล<br><em>ลงมือให้ไว</em></h1><p class="hero-copy">ผู้ช่วย AI ที่เริ่มต้นด้วย Puter และเติบโตเป็นระบบของคุณเอง</p></div><div class="hero-orb" aria-hidden="true"><span>✦</span></div></section>
+
+    <section class="workspace" aria-label="พื้นที่แชท">
+      <aside class="sidebar">
+        <div class="side-heading"><span>บทสนทนา</span><button id="new-chat" class="icon-button" title="แชทใหม่" aria-label="แชทใหม่">＋</button></div>
+        <div id="conversation-list" class="conversation-list"></div>
+        <div class="side-footer"><span class="dot"></span><span>Puter AI พร้อมใช้งาน</span></div>
+      </aside>
+      <section class="chat-panel">
+        <div class="chat-header"><div><span class="chat-title">ผู้ช่วยของฉัน</span><span class="chat-subtitle">สนทนาได้ทุกเรื่อง</span></div><button id="clear-chat" class="icon-button" title="ล้างบทสนทนา" aria-label="ล้างบทสนทนา">⌫</button></div>
+        <div id="messages" class="messages" role="log" aria-live="polite"></div>
+        <div id="error" class="error hidden" role="alert"></div>
+        <form id="composer" class="composer"><textarea id="prompt" rows="1" maxlength="8000" placeholder="เข้าสู่ระบบเพื่อเริ่มสนทนา..." disabled aria-label="ข้อความ"></textarea><button id="send" class="send" type="submit" disabled aria-label="ส่งข้อความ">↑</button></form>
+        <div class="composer-meta"><span>Enter เพื่อส่ง · Shift + Enter ขึ้นบรรทัดใหม่</span><span id="counter">0 / 8000</span></div>
+      </section>
     </section>
+    <p class="privacy"><span>🔒</span> การสนทนานี้ทำงานในเบราว์เซอร์ของคุณ ไม่เก็บรหัสผ่านหรือ Puter auth token</p>
   </main>
   <script src="app.js"></script>
 </body>
