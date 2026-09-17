@@ -1,189 +1,24 @@
-const STORAGE_KEY = "cowagent-chat-v2";
+const STORAGE_KEY = "cowagent-chat-v3";
 const SANDBOX_KEY = "cowagent-sandbox-v1";
 const $ = (id) => document.getElementById(id);
-
-const prompt = $("prompt");
-const composer = $("composer");
-const messages = $("messages");
-const errorBox = $("error");
-const counter = $("counter");
-const htmlEditor = $("html-editor");
-const cssEditor = $("css-editor");
-const jsEditor = $("js-editor");
-const previewFrame = $("preview-frame");
-const runCodeBtn = $("run-code");
-const saveCodeBtn = $("save-code");
-
+const prompt = $("prompt"), composer = $("composer"), messages = $("messages"), errorBox = $("error"), typing = $("typing");
+const htmlEditor = $("html-editor"), cssEditor = $("css-editor"), jsEditor = $("js-editor"), previewFrame = $("preview-frame");
 let conversation = loadConversation();
-
-function defaultConversation() {
-  return [{
-    role: "assistant",
-    content: "สวัสดีครับ 👋\nผมคือ CowAgent คุยกับผมได้ตามปกติเลยครับ หรือจะสั่ง /run เพื่อเปิด Sandbox ก็ได้"
-  }];
-}
-
-function loadConversation() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(saved) && saved.length ? saved : defaultConversation();
-  } catch (_) { return defaultConversation(); }
-}
-
-function saveConversation() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(conversation)); } catch (_) {}
-}
-
-function renderMessages() {
-  if (!messages) return;
-  messages.replaceChildren();
-  conversation.forEach((item) => {
-    const article = document.createElement("article");
-    article.className = `message ${item.role}`;
-    const bubble = document.createElement("div");
-    bubble.className = "bubble";
-    bubble.textContent = item.content;
-    article.appendChild(bubble);
-    messages.appendChild(article);
-  });
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function addMessage(role, content) {
-  conversation.push({ role, content });
-  saveConversation();
-  renderMessages();
-}
-
-function showError(message = "") {
-  if (!errorBox) return;
-  errorBox.textContent = message;
-  errorBox.classList.toggle("hidden", !message);
-}
-
-function loadSandbox() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(SANDBOX_KEY));
-    if (saved) {
-      if (htmlEditor) htmlEditor.value = saved.html || htmlEditor.value;
-      if (cssEditor) cssEditor.value = saved.css || cssEditor.value;
-      if (jsEditor) jsEditor.value = saved.js || jsEditor.value;
-    }
-  } catch (_) {}
-}
-
-function saveSandbox() {
-  try {
-    localStorage.setItem(SANDBOX_KEY, JSON.stringify({
-      html: htmlEditor?.value || "",
-      css: cssEditor?.value || "",
-      js: jsEditor?.value || ""
-    }));
-  } catch (_) {}
-}
-
-function runSandbox() {
-  if (!previewFrame || !htmlEditor || !cssEditor || !jsEditor) return;
-  const doc = `<!doctype html><html><head><meta charset="UTF-8"><style>${cssEditor.value}</style></head><body>${htmlEditor.value}<script>try{${jsEditor.value}}catch(error){const el=document.createElement('pre');el.style.color='#b42318';el.style.whiteSpace='pre-wrap';el.textContent=error.stack||error.message;document.body.appendChild(el)}<\\/script></body></html>`;
-  previewFrame.srcdoc = doc;
-  saveSandbox();
-}
-
-function extractAIText(response) {
-  if (typeof response === "string") return response;
-  if (response?.message?.content) return response.message.content;
-  if (Array.isArray(response?.message?.content)) return response.message.content.map((part) => part.text || "").join("");
-  if (response?.content) return response.content;
-  return "ได้รับคำตอบจาก AI แล้ว แต่ไม่พบข้อความตอบกลับที่อ่านได้ครับ";
-}
-
-async function askBot(text) {
-  if (!window.puter?.ai?.chat) {
-    return "ตอนนี้ยังเชื่อมต่อ AI ไม่สำเร็จครับ ลองโหลดหน้าใหม่ หรือตรวจว่า Puter SDK โหลดได้แล้ว\n\nคุณยังใช้ /run เพื่อรัน Browser Sandbox ได้ตามปกติ";
-  }
-  try {
-    const history = conversation.slice(-12).map((item) => ({ role: item.role, content: item.content }));
-    const response = await puter.ai.chat(history.concat({ role: "user", content: text }), {
-      model: "gpt-4o-mini",
-      stream: false
-    });
-    return extractAIText(response);
-  } catch (error) {
-    console.error(error);
-    return `ขออภัยครับ เรียก AI ไม่สำเร็จ: ${error.message || "ไม่ทราบสาเหตุ"}\n\nลองเข้าสู่ระบบ Puter แล้วส่งข้อความอีกครั้งครับ`;
-  }
-}
-
-function isRunRequest(text) {
-  const lower = text.toLowerCase();
-  return lower === "/run" || lower === "/preview" || /รัน.*(sandbox|แซนบ็อก)|แสดงผล.*(sandbox|preview)/.test(lower);
-}
-
-async function handleMessage(text) {
-  const normalized = text.trim();
-  const htmlCommand = normalized.match(/^\/html\s+([\s\S]+)/i);
-  const cssCommand = normalized.match(/^\/css\s+([\s\S]+)/i);
-  const jsCommand = normalized.match(/^\/(?:js|javascript)\s+([\s\S]+)/i);
-
-  if (htmlCommand && htmlEditor) {
-    htmlEditor.value = htmlCommand[1]; runSandbox();
-    return "อัปเดต HTML และรัน Preview ให้แล้วครับ ✅";
-  }
-  if (cssCommand && cssEditor) {
-    cssEditor.value = cssCommand[1]; runSandbox();
-    return "อัปเดต CSS และรัน Preview ให้แล้วครับ ✅";
-  }
-  if (jsCommand && jsEditor) {
-    jsEditor.value = jsCommand[1]; runSandbox();
-    return "อัปเดต JavaScript และรัน Preview ให้แล้วครับ ✅";
-  }
-  if (isRunRequest(normalized)) {
-    runSandbox();
-    return "เรียกใช้ Browser Sandbox และอัปเดต Live Preview ให้แล้วครับ ✅";
-  }
-  return askBot(normalized);
-}
-
-if (composer) {
-  composer.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    const text = prompt?.value.trim();
-    if (!text) return;
-    addMessage("user", text);
-    prompt.value = "";
-    if (counter) counter.textContent = "0 / 6000";
-    const send = $("send");
-    if (send) { send.disabled = true; send.style.opacity = "0.5"; }
-    const answer = await handleMessage(text);
-    addMessage("assistant", answer);
-    if (send) { send.disabled = false; send.style.opacity = "1"; }
-  });
-}
-
-if (prompt) {
-  prompt.addEventListener("input", () => {
-    if (counter) counter.textContent = `${prompt.value.length} / 6000`;
-    prompt.style.height = "auto";
-    prompt.style.height = `${Math.min(prompt.scrollHeight, 150)}px`;
-  });
-  prompt.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      composer?.requestSubmit();
-    }
-  });
-}
-
-$("new-chat")?.addEventListener("click", () => {
-  conversation = defaultConversation();
-  saveConversation();
-  renderMessages();
-});
-$("run-code")?.addEventListener("click", runSandbox);
-$("save-code")?.addEventListener("click", saveSandbox);
-
-(function init() {
-  renderMessages();
-  loadSandbox();
-  runSandbox();
-})();
+function defaultConversation(){return [{role:"assistant",content:"สวัสดีครับ 👋\nผมคือ CowAgent คุยกับผมได้ตามปกติเลยครับ หรือจะสั่ง /run เพื่อเปิด Sandbox ก็ได้"}]}
+function loadConversation(){try{const x=JSON.parse(localStorage.getItem(STORAGE_KEY));return Array.isArray(x)&&x.length?x:defaultConversation()}catch(_){return defaultConversation()}}
+function saveConversation(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(conversation))}catch(_) {}}
+function renderMessages(){messages.replaceChildren();conversation.forEach(item=>{const article=document.createElement("article");article.className=`message ${item.role}`;const bubble=document.createElement("div");bubble.className="bubble";bubble.textContent=item.content;article.appendChild(bubble);messages.appendChild(article)});messages.scrollTop=messages.scrollHeight}
+function addMessage(role,content){conversation.push({role,content});saveConversation();renderMessages()}
+function setTyping(value){typing.classList.toggle("hidden",!value);if(value)messages.scrollTop=messages.scrollHeight}
+function loadSandbox(){try{const x=JSON.parse(localStorage.getItem(SANDBOX_KEY));if(x){htmlEditor.value=x.html||htmlEditor.value;cssEditor.value=x.css||cssEditor.value;jsEditor.value=x.js||jsEditor.value}}catch(_) {}}
+function saveSandbox(){try{localStorage.setItem(SANDBOX_KEY,JSON.stringify({html:htmlEditor.value,css:cssEditor.value,js:jsEditor.value}))}catch(_) {}}
+function runSandbox(){const doc=`<!doctype html><html><head><meta charset="UTF-8"><style>${cssEditor.value}</style></head><body>${htmlEditor.value}<script>try{${jsEditor.value}}catch(e){document.body.innerHTML+='<pre style="color:red;white-space:pre-wrap">'+(e.stack||e.message)+'</pre>'}<\\/script></body></html>`;previewFrame.srcdoc=doc;saveSandbox()}
+function extract(response){if(typeof response==="string")return response;if(response?.message?.content)return Array.isArray(response.message.content)?response.message.content.map(x=>x.text||"").join(""):response.message.content;if(response?.content)return response.content;return "ได้รับคำตอบจาก AI แล้วครับ"}
+async function askBot(text){if(!window.puter?.ai?.chat)return "ตอนนี้ AI ยังไม่พร้อมครับ ลองตรวจการโหลด Puter SDK หรือส่ง /run เพื่อเปิด Sandbox ได้เลย";const history=conversation.slice(-12).map(x=>({role:x.role,content:x.content}));try{const result=await puter.ai.chat(history.concat({role:"user",content:text}),{model:"gpt-4o-mini",stream:true});if(result&&typeof result[Symbol.asyncIterator]==="function"){let answer="";for await(const chunk of result){const part=extract(chunk);answer+=part;if(typing.dataset.answer!==answer){typing.dataset.answer=answer}}return answer||"AI ไม่ได้ส่งข้อความกลับมาครับ"}return extract(result)}catch(error){console.error(error);return `ขออภัยครับ เรียก AI ไม่สำเร็จ: ${error.message||"ไม่ทราบสาเหตุ"}`}}
+function isRun(text){const x=text.toLowerCase();return x==="/run"||x==="/preview"||/รัน.*(sandbox|แซนบ็อก)|แสดงผล.*(sandbox|preview)/.test(x)}
+async function handleMessage(text){const h=text.match(/^\/html\s+([\s\S]+)/i),c=text.match(/^\/css\s+([\s\S]+)/i),j=text.match(/^\/(?:js|javascript)\s+([\s\S]+)/i);if(h){htmlEditor.value=h[1];runSandbox();return"อัปเดต HTML และรัน Preview ให้แล้วครับ ✅"}if(c){cssEditor.value=c[1];runSandbox();return"อัปเดต CSS และรัน Preview ให้แล้วครับ ✅"}if(j){jsEditor.value=j[1];runSandbox();return"อัปเดต JavaScript และรัน Preview ให้แล้วครับ ✅"}if(isRun(text)){runSandbox();return"เรียกใช้ Browser Sandbox และอัปเดต Live Preview ให้แล้วครับ ✅"}return askBot(text)}
+composer.addEventListener("submit",async e=>{e.preventDefault();const text=prompt.value.trim();if(!text)return;addMessage("user",text);prompt.value="";$("counter").textContent="0 / 6000";$("send").disabled=true;setTyping(true);const answer=await handleMessage(text);setTyping(false);addMessage("assistant",answer);$("send").disabled=false})
+prompt.addEventListener("input",()=>{$("counter").textContent=`${prompt.value.length} / 6000`;prompt.style.height="auto";prompt.style.height=`${Math.min(prompt.scrollHeight,150)}px`});prompt.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();composer.requestSubmit()}})
+function toggle(id,open){$(id).classList.toggle("open",open)}
+$("open-sidebar").onclick=()=>{toggle("sidebar",true);toggle("backdrop",true)};$("close-sidebar").onclick=()=>{toggle("sidebar",false);toggle("backdrop",false)};$("backdrop").onclick=()=>{toggle("sidebar",false);toggle("sandbox-panel",false);toggle("backdrop",false)};["open-sandbox","open-sandbox-nav","sandbox-fab"].forEach(id=>$(id).onclick=()=>{toggle("sandbox-panel",true);toggle("backdrop",true)});$("close-sandbox").onclick=()=>{toggle("sandbox-panel",false);toggle("backdrop",false)};$("run-code").onclick=runSandbox;$("save-code").onclick=saveSandbox;["new-chat","new-chat-top"].forEach(id=>$(id).onclick=()=>{conversation=defaultConversation();saveConversation();renderMessages()});
+(function init(){renderMessages();loadSandbox();runSandbox()})();
