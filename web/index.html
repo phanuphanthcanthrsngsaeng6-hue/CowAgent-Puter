@@ -3,29 +3,109 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0b1220">
-  <meta name="description" content="รายการสิ่งที่ต้องทำ พร้อมบันทึกอัตโนมัติในเบราว์เซอร์">
-  <title>My Tasks — CowAgent</title>
+  <title>CowAgent Workspace</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://js.puter.com/v2/"></script>
 </head>
 <body>
-  <main class="app-shell">
-    <header class="topbar">
-      <a class="brand" href="./"><span class="logo">✓</span><span><strong>My Tasks</strong><small>จัดการวันของคุณให้เป็นระบบ</small></span></a>
-      <div class="header-actions"><span class="save-status" id="save-status">บันทึกอัตโนมัติ</span><button class="icon-button" id="theme-toggle" type="button" title="สลับธีม" aria-label="สลับธีม">☼</button></div>
-    </header>
+  <div class="workspace-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">C</div>
+        <div>
+          <strong>CowAgent</strong>
+          <small>Workspace</small>
+        </div>
+      </div>
 
-    <section class="hero"><div><p class="eyebrow">YOUR DAILY FOCUS</p><h1>ทำทีละอย่าง<br><em>ให้สำเร็จ</em></h1><p>รายการงานของคุณจะถูกเก็บไว้ในเบราว์เซอร์เครื่องนี้โดยอัตโนมัติ</p></div><div class="progress-ring" id="progress-ring"><strong id="progress-value">0%</strong><small>เสร็จแล้ว</small></div></section>
+      <nav class="nav">
+        <button class="nav-item active" type="button">💬 ห้องแชท</button>
+        <button class="nav-item" type="button">🧪 แซนบ็อก</button>
+        <button class="nav-item" type="button">📋 To-Do</button>
+        <button class="nav-item" type="button">⚙️ ตั้งค่า</button>
+      </nav>
 
-    <section class="todo-card" aria-label="รายการสิ่งที่ต้องทำ">
-      <form class="add-form" id="add-form"><input id="task-input" type="text" maxlength="200" placeholder="มีอะไรที่ต้องทำวันนี้?" autocomplete="off" aria-label="เพิ่มงานใหม่"><select id="priority-input" aria-label="ความสำคัญ"><option value="normal">ปกติ</option><option value="high">สำคัญ</option><option value="low">ไม่เร่งด่วน</option></select><button class="primary" type="submit">เพิ่มงาน <span>＋</span></button></form>
-      <div class="toolbar"><div class="filters" role="tablist" aria-label="กรองรายการ"><button class="filter active" data-filter="all" type="button">ทั้งหมด <b id="all-count">0</b></button><button class="filter" data-filter="active" type="button">กำลังทำ <b id="active-count">0</b></button><button class="filter" data-filter="completed" type="button">เสร็จแล้ว <b id="completed-count">0</b></button></div><label class="search"><span>⌕</span><input id="search-input" type="search" placeholder="ค้นหางาน..." aria-label="ค้นหางาน"></label></div>
-      <div id="task-list" class="task-list" role="list"></div>
-      <div id="empty-state" class="empty-state"><div class="empty-icon">✦</div><h2 id="empty-title">ยังไม่มีงาน</h2><p id="empty-copy">เพิ่มงานแรกของคุณ แล้วเริ่มลงมือกันเลย</p></div>
-      <footer class="card-footer"><span id="remaining-text">0 งานที่เหลือ</span><button id="clear-completed" class="text-button" type="button">ลบงานที่เสร็จแล้ว</button></footer>
-    </section>
-    <p class="privacy">🔒 ข้อมูลถูกเก็บไว้ใน Local Storage ของเบราว์เซอร์นี้เท่านั้น</p>
-  </main>
+      <div class="user-card">
+        <span id="status" class="status-badge">ยังไม่ได้ล็อกอิน</span>
+        <button id="login" class="primary-btn" type="button">เข้าสู่ระบบ Puter</button>
+        <button id="logout" class="ghost-btn hidden" type="button">ออกจากระบบ</button>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AI WORKSPACE</p>
+          <h1>โต้ตอบ + ทดลองโค้ด + สร้างผลงาน</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="ghost-btn" type="button">เปิดแซนบ็อก</button>
+        </div>
+      </header>
+
+      <section class="chat-split">
+        <div class="chat-panel">
+          <div class="chat-header">
+            <span class="chat-title">ผู้ช่วยของฉัน</span>
+            <span class="chat-subtitle">สร้างแนวคิด · รัน mock preview · จัดการงาน</span>
+          </div>
+
+          <div id="messages" class="messages">
+            <article class="message assistant">
+              <div class="avatar">AI</div>
+              <div class="bubble">สวัสดีครับ 👋
+ผมพร้อมช่วยคุณสร้าง UI, แซนบ็อก preview และจัดการงานใน workspace นี้</div>
+            </article>
+          </div>
+
+          <div id="error" class="error hidden"></div>
+
+          <form id="composer" class="composer">
+            <textarea id="prompt" rows="1" maxlength="6000" placeholder="พิมพ์สิ่งที่ต้องการให้ผมช่วย..."></textarea>
+            <button id="send" class="primary-btn" type="submit">ส่ง</button>
+          </form>
+          <div class="composer-meta">
+            <span>Enter เพื่อส่ง · Shift + Enter ขึ้นบรรทัดใหม่</span>
+            <span id="counter">0 / 6000</span>
+          </div>
+        </div>
+
+        <div class="sandbox-panel">
+          <div class="sandbox-header">
+            <span>Browser Sandbox</span>
+            <div class="sandbox-actions">
+              <button id="run-code" class="small-btn" type="button">Run</button>
+              <button id="save-code" class="small-btn ghost" type="button">Save</button>
+            </div>
+          </div>
+
+          <div class="editor-wrap">
+            <div class="editor-column">
+              <label>HTML</label>
+              <textarea id="html-editor" spellcheck="false"><h1>Hello CowAgent!</h1>
+<button onclick="alert('Hello from sandbox!')">Click me</button></textarea>
+            </div>
+            <div class="editor-column">
+              <label>CSS</label>
+              <textarea id="css-editor" spellcheck="false">body { font-family: sans-serif; padding: 20px; background: #0f172a; color: white; }
+button { padding: 10px 16px; border: none; border-radius: 10px; background: #55e6ab; color: #021a12; font-weight: 700; cursor: pointer; }</textarea>
+            </div>
+            <div class="editor-column">
+              <label>JavaScript</label>
+              <textarea id="js-editor" spellcheck="false">console.log('Sandbox ready');
+document.body.insertAdjacentHTML('beforeend', '<p>Preview running successfully.</p>');</textarea>
+            </div>
+          </div>
+
+          <div class="preview-header">
+            <span>Live Preview</span>
+          </div>
+          <iframe id="preview-frame" title="sandbox preview"></iframe>
+        </div>
+      </section>
+    </main>
+  </div>
+
   <script src="app.js"></script>
 </body>
 </html>
