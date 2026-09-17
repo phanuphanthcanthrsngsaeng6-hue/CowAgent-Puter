@@ -1,17 +1,15 @@
-# CowAgent Full-Stack Scaffold
+# CowAgent full-stack scaffold
 
-This repository now includes a minimal working scaffold for a full-stack AI workspace using:
+## New features
 
-- Frontend: React + Vite
-- Backend: Python + FastAPI
-- LLM access: Puter AI via browser SDK
-- Repo tools: workspace search and git status
-- Sandbox: Docker placeholder endpoint
-- Storage: SQLite-ready backend structure
+- Puter login and user-selected model
+- Streaming chat via Puter, with FastAPI SSE fallback
+- Persistent SQLite conversations/messages
+- Repository file list and file viewer
+- Write-file approval modal; writes are only performed after approval
+- Docker sandbox with no network, read-only root filesystem, dropped capabilities, memory/CPU/PID limits, and a timeout
 
-## Run it locally
-
-### 1) Backend
+## Run
 
 ```bash
 cd backend
@@ -21,11 +19,7 @@ pip install -r requirements.txt
 python main.py
 ```
 
-Backend runs on:
-
-- http://localhost:8000
-
-### 2) Frontend
+In another terminal:
 
 ```bash
 cd frontend
@@ -33,24 +27,10 @@ npm install
 npm run dev
 ```
 
-Frontend runs on:
+Open `http://localhost:3000`. Docker must be installed and running for the isolated sandbox button. The Puter SDK is loaded by the frontend and login/model selection happen in the browser.
 
-- http://localhost:3000
+## Important security notes
 
-## Key endpoints
-
-- GET /api/health
-- GET /api/models
-- POST /api/chat
-- GET /api/workspace/files
-- POST /api/workspace/search
-- GET /api/git/status
-- POST /api/git/commit
-- POST /api/sandbox/run
-
-## Notes
-
-- Puter login is handled directly in the browser from the frontend.
-- The backend acts as the repo and sandbox control layer.
-- Docker sandbox is a ready placeholder; it will return a graceful message if Docker is unavailable.
-- This scaffold is intentionally minimal so it is safe to extend into a real multi-agent coding workspace.
+- Review file changes in the approval modal before approving.
+- The sandbox uses an isolated Alpine container with network disabled and resource limits. Do not expose the backend publicly without adding authentication and an origin allowlist.
+- The backend is a local development scaffold, not a production-hosted security boundary.
